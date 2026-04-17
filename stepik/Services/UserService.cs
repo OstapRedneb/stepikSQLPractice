@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace stepik.Services
 {
-    public class UserService
+    public class UsersService
     {
         public static bool Add(User user) 
         {
@@ -23,13 +23,13 @@ namespace stepik.Services
 
                     using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
                     {
-                        command.ExecuteNonQuery();
-
                         command.Parameters.AddWithValue("@full_name", user.FullName);
                         command.Parameters.AddWithValue("@details", user.Details);
                         command.Parameters.AddWithValue("@join_date", user.JoinDate);
                         command.Parameters.AddWithValue("@avatar", user.Avatar);
                         command.Parameters.AddWithValue("@is_active", user.IsActive);
+
+                        command.ExecuteNonQuery();
                     }
                 }
 
