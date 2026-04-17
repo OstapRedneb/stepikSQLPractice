@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace stepik.Models
+{
+    public class User
+    {
+        public string FullName { get; set; }
+        public string? Details { get; set; }
+        public DateTime JoinDate { get; set; }
+        public string? Avatar { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

@@ -1,17 +1,29 @@
 ﻿using MySql.Data.MySqlClient;
+using System.Reflection.Metadata;
+using Constant = stepik.Constant;
 
 public class Program
 {
     public static void Main()
     {
-        string connectionString = "Server=localhost;Database=test;Uid=root;Pwd=;";
-
-        using (var connection = new MySqlConnection(connectionString))
+        using (MySqlConnection connection = new MySqlConnection(Constant.ConnectionString))
         {
             connection.Open();
-            Console.WriteLine("Подключение открыто");
-            Console.WriteLine("Запросы к БД");
+
+            string sqlQuery = "CREATE TABLE IF NOT EXISTS users(" +
+                "id         INT PRIMARY KEY AUTO_INCREMENT," +
+                "full_name  VARCHAR(100) NOT NULL," +
+                "details    TEXT NULL," +
+                "join_date  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()," +
+                "avatar     TEXT NOT NULL," +
+                "is_active  BOOLEAN NOT NULL" +
+                ");";
+
+            using(MySqlCommand command = new MySqlCommand(sqlQuery, connection)) 
+            {
+                int execute = command.ExecuteNonQuery();
+                Console.WriteLine($"Выполнилось создание таблицы. Добавено {execute} строк");
+            }
         }
-        Console.WriteLine("Подключение закрыто");
     }
 }
