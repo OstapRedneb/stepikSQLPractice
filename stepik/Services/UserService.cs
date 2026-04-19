@@ -2,7 +2,6 @@
 using stepik.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,6 +38,33 @@ namespace stepik.Services
             {
                 return false;
             }
+        }
+
+        public static User? Get(string fullName) 
+        {
+            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            connection.Open();
+
+            string sqlQuery = $"SELECT * FROM users WHERE full_name = @fullName AND is_active = 1;";
+
+            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
+
+            command.Parameters.AddWithValue("@fullName", fullName);
+
+            using MySqlDataReader reader = command.ExecuteReader();
+
+            if (reader.Read())
+            {
+                return new User
+                {
+                    FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    Details = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    JoinDate = reader.GetDateTime(3),
+                    Avatar = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    IsActive = reader.GetBoolean(5)
+                };
+            }
+            return null;
         }
     }
 }
