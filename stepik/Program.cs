@@ -9,6 +9,7 @@ public class Program
 {
     public static void Main()
     {
+        Console.WriteLine(CoursesService.GetTotalCount());
         while (true) 
         {
             Console.WriteLine(@"
@@ -51,7 +52,7 @@ public class Program
         }
     }
 
-    public static void CreateTable() 
+    public static void CreateTableUsers() 
     {
         using (MySqlConnection connection = new MySqlConnection(Constant.ConnectionString))
         {
@@ -72,6 +73,25 @@ public class Program
                 Console.WriteLine($"Выполнилось создание таблицы. Добавено {execute} строк");
             }
         }
+    }
+    public static void CreateTableCourses() 
+    {
+        using MySqlConnection connection = new MySqlConnection("Server=localhost;Database=test;Uid=root;Pwd=228Ou_eeee");
+        connection.Open();
+
+        string sqlQuery = "CREATE TABLE IF NOT EXISTS courses" +
+            "(" +
+            "   id      INT PRIMARY KEY AUTO_INCREMENT," +
+            "   title   VARCHAR(100) NOT NULL," +
+            "   summary TEXT NULL," +
+            "   photo   TEXT NULL" +
+            ");";
+
+        using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
+
+        int execute = command.ExecuteNonQuery();
+
+        Console.WriteLine($"Создано {execute} строк");
     }
     public static void RegisterUser() 
     {

@@ -39,7 +39,6 @@ namespace stepik.Services
                 return false;
             }
         }
-
         public static User? Get(string fullName) 
         {
             using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
@@ -65,6 +64,19 @@ namespace stepik.Services
                 };
             }
             return null;
+        }
+        public static int GetTotalCount() 
+        {
+            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            connection.Open();
+
+            string sqlQuery = "SELECT COUNT(*) FROM users;";
+
+            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
+
+            object countObj = command.ExecuteScalar();
+
+            return (int)(long)countObj;
         }
     }
 }
