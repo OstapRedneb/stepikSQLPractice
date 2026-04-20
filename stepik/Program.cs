@@ -2,6 +2,7 @@
 using stepik.Models;
 using stepik.Services;
 using System.Reflection.Metadata;
+using System.Security.Cryptography;
 using Constant = stepik.Constant;
 
 public class Program
@@ -17,26 +18,32 @@ public class Program
 
 Выберите действие (введите число и нажмите Enter):
 
-1. Зарегистрироваться
-2. Закрыть приложение
+1. Войти
+2. Зарегистрироваться
+3. Закрыть приложение
 
 ************************************************
 ");
             string input = Console.ReadLine();
 
-            if (!(input == "1" || input == "2"))
+            if (!(input == "1" || input == "2" || input == "3"))
             {
                 Console.WriteLine("Неверный выбор. Попробуйте снова.");
                 Console.Clear();
                 continue;
             }
 
-            if (input == "1")
+            if (input == "1") 
+            {
+                Console.Clear();
+                LoginUser();
+            }
+            if (input == "2")
             {
                 Console.Clear();
                 RegisterUser();
             }
-            if (input == "2") 
+            if (input == "3") 
             {
                 Console.WriteLine("До свидания!");
                 break;
@@ -76,5 +83,16 @@ public class Program
             Console.WriteLine($"Пользователь '{user.FullName}' успешно добавлен.\n");
         else
             Console.WriteLine("Произошла ошибка, произведен выход на главную страницу\n");
+    }
+
+    public static void LoginUser()
+    {
+        Console.WriteLine("Введите имя и фамилию через пробел и нажмите Enter:");
+        string? input = Console.ReadLine();
+        User? user = UsersService.Get(input);
+        if (user is null) 
+            Console.WriteLine("Пользователь не найден, произведен выход на главную страницу\n");
+        else
+            Console.WriteLine($"Пользователь '{user.FullName}' успешно вошел\n");
     }
 }
