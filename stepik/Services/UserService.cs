@@ -2,6 +2,7 @@
 using stepik.Models;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,31 +40,28 @@ namespace stepik.Services
                 return false;
             }
         }
-        public static User? Get(string fullName) 
+        public static User? Get(string fullName)
         {
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            using var connection = new MySqlConnection(Constant.ConnectionString);
             connection.Open();
-
-            string sqlQuery = $"SELECT * FROM users WHERE full_name = @fullName AND is_active = 1;";
-
-            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
-
-            command.Parameters.AddWithValue("@fullName", fullName);
-
-            using MySqlDataReader reader = command.ExecuteReader();
-
-            if (reader.Read())
-            {
-                return new User
+            var query = @"SELECT * FROM users
+                   WHERE full_name = @FullName AND is_active = 1;";
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@FullName", fullName);
+            using var reader = command.ExecuteReader();
+            return reader.Read()
+                ? new User
                 {
-                    FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
-                    Details = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    JoinDate = reader.GetDateTime(3),
-                    Avatar = reader.IsDBNull(4) ? null : reader.GetString(4),
-                    IsActive = reader.GetBoolean(5)
-                };
-            }
-            return null;
+                    FullName = reader.GetString("full_name"),
+                    Details = reader.IsDBNull("details") ? null : reader.GetString("details"),
+                    JoinDate = reader.GetDateTime("join_date"),
+                    Avatar = reader.IsDBNull("avatar") ? null : reader.GetString("avatar"),
+                    IsActive = reader.GetBoolean("is_active"),
+                    Knowledge = reader.GetInt32("knowledge"),
+                    Reputation = reader.GetInt32("reputation"),
+                    FollowersCount = reader.GetInt32("followers_count")
+                }
+                : null;
         }
         public static int GetTotalCount() 
         {
@@ -77,6 +75,32 @@ namespace stepik.Services
             object countObj = command.ExecuteScalar();
 
             return (int)(long)countObj;
+        }
+        public static string FormatUserMetrics(int number) 
+        {
+            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            connection.Open();
+
+            string functionName = "format_number";
+
+            using MySqlCommand command = new MySqlCommand(functionName, connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            MySqlParameter numberParameter = new MySqlParameter("@number", number) 
+            {
+                Direction = ParameterDirection.Input
+            };
+            MySqlParameter resultParameter = new MySqlParameter("@result", MySqlDbType.VarChar)
+            {
+                Direction = ParameterDirection.ReturnValue
+            };
+
+            command.Parameters.Add(numberParameter);
+            command.Parameters.Add(resultParameter);
+
+            command.ExecuteNonQuery();
+
+            return resultParameter.Value.ToString() ?? "Ошибка";
         }
     }
 }
