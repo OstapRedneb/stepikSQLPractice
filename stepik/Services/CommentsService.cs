@@ -58,5 +58,35 @@ namespace stepik.Services
 
             return comments;
         }
+        public static bool Delete(int id) 
+        {
+            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            connection.Open();
+
+            MySqlTransaction transaction = connection.BeginTransaction();
+
+            try
+            {
+                string sqlQuery = "DELETE FROM comments " +
+                                  "WHERE comments.id = @commentId OR comments.reply_comment_id = @commentId; " +
+                                  "DELETE FROM course_reviews " +
+                                  "WHERE course_reviews.comment_id = @commentId; ";
+
+                using MySqlCommand command = new MySqlCommand(sqlQuery, connection, transaction);
+
+                command.Parameters.AddWithValue("@commentId", id);
+
+                command.ExecuteNonQuery();
+
+                transaction.Commit();
+
+                return true;
+            }
+            catch(Exception ex) 
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
     }
 }
