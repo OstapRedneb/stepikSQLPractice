@@ -102,7 +102,7 @@ namespace stepik.Services
 
             return resultParameter.Value.ToString() ?? "Ошибка";
         }
-        public DataSet GetUserRating() 
+        public static DataSet GetUserRating() 
         {
             using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
             connection.Open();
@@ -112,6 +112,14 @@ namespace stepik.Services
                                  "WHERE is_active = 1 " +
                                  "ORDER BY knowledge DESC " +
                                  "LIMIT 10;";
+
+            using MySqlDataAdapter adapter = new MySqlDataAdapter(getSqlQuery, connection);
+            
+            DataSet results = new DataSet();
+
+            adapter.Fill(results);
+
+            return results;
         }
     }
 }
