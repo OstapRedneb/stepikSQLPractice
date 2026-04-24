@@ -102,5 +102,16 @@ namespace stepik.Services
 
             return resultParameter.Value.ToString() ?? "Ошибка";
         }
+        public DataSet GetUserRating() 
+        {
+            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
+            connection.Open();
+
+            string getSqlQuery = "SELECT full_name, knowledge, reputation " +
+                                 "FROM users " +
+                                 "WHERE is_active = 1 " +
+                                 "ORDER BY knowledge DESC " +
+                                 "LIMIT 10;";
+        }
     }
 }
