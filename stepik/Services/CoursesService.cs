@@ -1,62 +1,60 @@
 ﻿using MySql.Data.MySqlClient;
-using stepik.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data;
 
-namespace stepik.Services
+public class CoursesService
 {
-    public class CoursesService
+    /// <summary>
+    /// Получение списка курсов пользователя
+    /// </summary>
+    /// <param name="fullName">Полное имя пользователя</param>
+    /// <returns>Список курсов</returns>
+    public List<Course> Get(string fullName)
     {
-        public static List<Course> Get(string fullName)
+        var courses = new List<Course>();
+
+        using var connection = new MySqlConnection(Constant.ConnectionString);
+        connection.Open();
+
+        var query = @"SELECT title, summary, photo, courses.id
+                      FROM user_courses
+                      JOIN courses ON user_courses.course_id = courses.id
+                      JOIN users ON users.id = user_courses.user_id
+                      WHERE users.full_name = @fullName AND users.is_active = 1
+                      ORDER BY user_courses.last_viewed DESC;";
+
+        using var command = new MySqlCommand(query, connection);
+        var fullNameParam = new MySqlParameter("@fullName", fullName);
+        command.Parameters.Add(fullNameParam);
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
-            connection.Open();
-
-            string sqlQuery =
-                "SELECT courses.title, courses.summary, courses.photo " +
-                "FROM user_courses " +
-                "INNER JOIN users ON users.id = user_courses.user_id " +
-                "INNER JOIN courses ON courses.id = user_courses.course_id " +
-                "WHERE users.is_active AND users.full_name = @fullName" +
-                "ORDER BY courses.last_viewed DESC;";
-
-            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
-
-            MySqlParameter fullNameParameter = new MySqlParameter("@fullName", MySqlDbType.VarChar);
-            fullNameParameter.Value = fullName;
-
-            command.Parameters.Add(fullNameParameter);
-
-            using MySqlDataReader reader = command.ExecuteReader();
-
-            List<Course> courses = new List<Course>();
-
-            while (reader.Read())
+            var course = new Course
             {
-                courses.Add(new Course()
-                {
-                    Title = reader.GetString(0),
-                    Summary = reader.IsDBNull(1) ? null : reader.GetString(1),
-                    Photo = reader.IsDBNull(2) ? null : reader.GetString(2)
-                });
-            }
-            return courses;
+                Id = reader.GetInt32("id"),
+                Title = reader.GetString("title"),
+                Summary = reader.IsDBNull("summary") ? null : reader.GetString("summary"),
+                Photo = reader.IsDBNull("photo") ? null : reader.GetString("photo")
+            };
+            courses.Add(course);
         }
-        public static int GetTotalCount()
-        {
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
-            connection.Open();
 
-            string sqlQuery = "SELECT COUNT(*) FROM courses;";
+        return courses;
+    }
 
-            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
+    /// <summary>
+    /// Получение общего количества курсов
+    /// </summary>
+    public int GetTotalCount()
+    {
+        using var connection = new MySqlConnection(Constant.ConnectionString);
+        connection.Open();
 
-            object totalCountObj = command.ExecuteScalar();
+        var query = "SELECT COUNT(*) FROM courses;";
 
-            return (int)(long)totalCountObj;
-        }
+        using var command = new MySqlCommand(query, connection);
+        var result = command.ExecuteScalar();
+
+        return result != null ? Convert.ToInt32(result) : 0;
     }
 }

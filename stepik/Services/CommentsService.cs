@@ -1,92 +1,84 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
-using stepik.Models;
+﻿using MySql.Data.MySqlClient;
 
-namespace stepik.Services
+public class CommentsService
 {
-    public class CommentsService
+    /// <summary>
+    /// Получение всех комментариев к курсу
+    /// </summary>
+    /// <param name="id">id курса</param>
+    /// <returns>Список комментариев</returns>
+    public List<Comment> Get(int id)
     {
-        public static List<Comment> Get(int courseId) 
+        var comments = new List<Comment>();
+
+        using var connection = new MySqlConnection(Constant.ConnectionString);
+        connection.Open();
+
+        var query = @"SELECT c.id, c.text, c.time
+                          FROM comments AS c
+                          JOIN steps AS s ON c.step_id = s.id
+                          JOIN unit_lessons AS ul ON s.lesson_id = ul.lesson_id
+                          JOIN units AS u ON ul.unit_id = u.id
+                          JOIN courses AS cr ON u.course_id = cr.id
+                          WHERE reply_comment_id IS NULL AND cr.id = @id
+                          ORDER BY c.time DESC;";
+
+        using var command = new MySqlCommand(query, connection);
+        var idParam = new MySqlParameter("@id", id);
+        command.Parameters.Add(idParam);
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            List<Comment> comments = new List<Comment>();
-
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
-            connection.Open();
-
-            MySqlTransaction transaction = connection.BeginTransaction();
-
-            try 
+            var comment = new Comment
             {
-                string sqlQuery = "SELECT comments.id, comments.text, comments.time " +
-                                  "FROM comments " +
-                                  "INNER JOIN steps ON steps.id = comments.step_id " +
-                                  "INNER JOIN lessons ON lessons.id = steps.lesson_id " +
-                                  "INNER JOIN unit_lessons ON unit_lessons.lesson_id = lessons_id " +
-                                  "INNER JOIN units ON units.id = unit_lessons.unit_id " +
-                                  "INNER JOIN courses ON courses.id = units.course_id " +
-                                  "WHERE course_id = @course_id;";
-
-                using MySqlCommand command = new MySqlCommand(sqlQuery, connection, transaction);
-
-                MySqlParameter courseIdParameter = new MySqlParameter("@course_id", MySqlDbType.Int32) {Value = courseId};
-
-                command.Parameters.Add(courseIdParameter);
-
-                using MySqlDataReader reader = command.ExecuteReader();
-
-
-                while (reader.Read())
-                {
-                    comments.Add(new Comment() 
-                        {
-                            Id = reader.GetInt32(0),
-                            Text = reader.GetString(1),
-                            Time = reader.GetDateTime(2)
-                        });
-                }
-
-                transaction.Commit();
-            }
-            catch(Exception ex) 
-            {
-                transaction.Rollback();
-            }
-
-            return comments;
+                Id = reader.GetInt32("id"),
+                Text = reader.GetString("text"),
+                Time = reader.GetDateTime("time"),
+            };
+            comments.Add(comment);
         }
-        public static bool Delete(int id) 
+
+        return comments;
+    }
+
+    /// <summary>
+    /// Удаление комментария пользователя
+    /// </summary>
+    /// <param name="id">id комментария</param>
+    /// <returns>Удалось ли удалить комментарий</returns>
+    public bool Delete(int id)
+    {
+        using var connection = new MySqlConnection(Constant.ConnectionString);
+        connection.Open();
+        MySqlTransaction transaction = connection.BeginTransaction();
+
+        try
         {
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
-            connection.Open();
+            string sqlQuery = @"DELETE FROM course_reviews
+                                WHERE comment_id = @id;";
 
-            MySqlTransaction transaction = connection.BeginTransaction();
+            using MySqlCommand command = new MySqlCommand(sqlQuery, connection, transaction);
+            command.Parameters.AddWithValue("@id", id);
+            command.ExecuteNonQuery();
 
-            try
-            {
-                string sqlQuery = "DELETE FROM comments " +
-                                  "WHERE comments.id = @commentId OR comments.reply_comment_id = @commentId; " +
-                                  "DELETE FROM course_reviews " +
-                                  "WHERE course_reviews.comment_id = @commentId; ";
+            command.CommandText = $@"DELETE FROM comments
+                                     WHERE reply_comment_id = @id;";
 
-                using MySqlCommand command = new MySqlCommand(sqlQuery, connection, transaction);
+            command.ExecuteNonQuery();
 
-                command.Parameters.AddWithValue("@commentId", id);
+            command.CommandText = $@"DELETE FROM comments
+                                     WHERE id = @id;";
 
-                command.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
-                transaction.Commit();
-
-                return true;
-            }
-            catch(Exception ex) 
-            {
-                transaction.Rollback();
-                return false;
-            }
+            transaction.Commit();
+            return true;
+        }
+        catch (Exception)
+        {
+            transaction.Rollback();
+            return false;
         }
     }
 }

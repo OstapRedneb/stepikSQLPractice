@@ -1,37 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MySql.Data.MySqlClient;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
 
-namespace stepik.Services
+public class CertificatesService
 {
-    public class CertificatesService
+    /// <summary>
+    /// Получение сертификатов пользователя
+    /// </summary>
+    /// <param name="fullName">Полное имя пользователя</param>
+    /// <returns>DataSet</returns>
+    public DataSet Get(string fullName)
     {
-        public static DataSet Get(string fullName) 
-        {
-            using MySqlConnection connection = new MySqlConnection(Constant.ConnectionString);
-            connection.Open();
-
-            string sqlQuery = "SELECT courses.title, certificates.issue_date, certificates.grade " +
-                              "FROM certificates " +
-                              "INNER JOIN users ON users.id = certificates.user_id " +
-                              "WHERE users.full_name = @name " +
-                              "ORDER BY certificates.issue_date DESC;";
-
-            using MySqlCommand command = new MySqlCommand(sqlQuery, connection);
-
-            MySqlParameter nameParameter = new MySqlParameter("@name", MySqlDbType.VarChar) {Value = fullName };
-            command.Parameters.Add(nameParameter);
-
-            using MySqlDataAdapter adapter = new MySqlDataAdapter(command);
-            DataSet dataSet = new DataSet("certificates");
-
-            adapter.Fill(dataSet);
-
-            return dataSet;
-        }
+        using var connection = new MySqlConnection(Constant.ConnectionString);
+        connection.Open();
+        var query = @"SELECT courses.title, certificates.issue_date, certificates.grade
+                          FROM certificates
+                          JOIN users ON certificates.user_id = users.id
+                          JOIN courses ON certificates.course_id = courses.id
+                          WHERE users.full_name = @fullName
+                          ORDER BY certificates.issue_date DESC;";
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@fullName", fullName);
+        using var dataAdapter = new MySqlDataAdapter(command);
+        var dataSet = new DataSet();
+        dataAdapter.Fill(dataSet);
+        return dataSet;
     }
 }
