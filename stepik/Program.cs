@@ -10,5 +10,6 @@ public class Program
         var menu = new MainMenu();
         menu.Display();
         menu.HandleUserChoice();
+        
     }
 }
